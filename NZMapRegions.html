@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+path {
+  stroke: white;
+  stroke-width: 0.25px;
+}
+
+path:hover {
+  fill: red;
+}
+
+text{
+	font-family: 'Roboto', sans-serif;
+}
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/topojson@3"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<script>
+	
+	//the lowest and highest values in the data, used so that the colour can properly spread
+	var lowestValue = 0; 
+	var highestValue = 0;
+	
+	var lowestIsZero = true;
+	
+	//the colours for the gradient
+	var colours = ["#c6dbef", "#084594"];
+	
+	
+	var title = "Confirmed COVID Cases by Region";
+	
+	var titleFontSize = "20px";
+	var legendFontSize = "12px";
+	
+	var legendBarX = 120;
+	var legendBarY = 150;
+	var legendBarWidth = 250;
+	var legendBarHeight = 10;
+	var legendOpacity = 0.6;
+	
+	var strokeWidth = 1;
+	
+	var graphBarHeight = 20;
+	var graphX = 30;
+	var graphY = 100;
+	
+	var data =[
+	 {"NAME_1": "Auckland",				"value": 401},
+	 {"NAME_1": "Bay of Plenty",		"value": 33},
+	 {"NAME_1": "Canterbury",			"value": 114},
+	 {"NAME_1": "Gisborne",				"value": 3},
+	 {"NAME_1": "Hawke's Bay",			"value": 38},
+	 {"NAME_1": "Manawatu-Wanganui",	"value": 27},
+	 {"NAME_1": "Marlborough",			"value": 37},
+	 {"NAME_1": "Nelson",				"value": 37},
+	 {"NAME_1": "Northland",			"value": 26},
+	 {"NAME_1": "Otago",				"value": 15},
+	 {"NAME_1": "Southland",			"value": 186},
+	 {"NAME_1": "Taranaki",				"value": 14},
+	 {"NAME_1": "Waikato",				"value": 154},
+	 {"NAME_1": "Wellington",			"value": 96},
+	 {"NAME_1": "West Coast",			"value": 4}
+    ]
+	
+	var minMaxArray = [];
+	
+	for (var i = 0; i < data.length; i++) {
+		minMaxArray.push(data[i].value);
+	}
+	
+	function getMaxOfArray(numArray) {
+		return Math.max.apply(null, numArray);
+	}
+	
+	function getMinOfArray(numArray) {
+		return Math.min.apply(null, numArray);
+	}
+	
+	highestValue = getMaxOfArray(minMaxArray);
+	
+	if(lowestIsZero == false){
+		lowestValue = getMinOfArray(minMaxArray);
+	}
+	
+	var map = d3.map();
+	
+	for (var i = 0; i < data.length; i++) {
+		map.set(data[i].NAME_1, data[i].value);
+	}
+	
+	var width = 900,
+		height = 700;
+
+	var projection = d3.geoMercator()
+		.center([-5, -39.2 ])
+		.scale(2200)
+		.rotate([-180,0]);
+
+	var svg = d3.select("body").append("svg")
+		.attr("width", width)
+		.attr("height", height);
+
+	var path = d3.geoPath()
+		.projection(projection);
+	
+	var colorScale = d3.scaleLinear()
+		.domain([lowestValue, highestValue])
+		.range([colours[0], colours[1]]);
+		
+	for (var i = 0; i < 9; i++) {
+		
+		
+		if(i<=7){
+			svg.append('rect')
+				.attr('x', legendBarX + ((legendBarWidth/8)*i))
+				.attr('y', legendBarY)
+				.attr('width', legendBarWidth/8)
+				.attr('height', legendBarHeight)
+				.attr("fill", colorScale((highestValue/8)*i))
+				.style('stroke', 'black')
+				.style('stroke-width', 0);
+		}
+		
+		svg.append("line")
+			.attr("x1", legendBarX + ((legendBarWidth/8)*i))
+			.attr("x2", legendBarX + ((legendBarWidth/8)*i))
+			.attr("y1", legendBarY)
+			.attr("y2", legendBarY + legendBarHeight + 6)
+			.style('stroke', 'black')
+			.style('stroke-width', strokeWidth)
+			.style("opacity", legendOpacity);
+	
+		svg.append("text")
+			.attr("x", legendBarX + ((legendBarWidth/8)*i))             
+			.attr("y", legendBarY + 30)
+			.attr("text-anchor", "middle")  
+			.style("font-size", legendFontSize) 
+			.text(Math.round((highestValue/8)*i))
+			.style("opacity", legendOpacity);
+	
+	}
+	
+	
+	//Title Text
+	svg.append("text")
+        .attr("x", legendBarX + (legendBarWidth/2))             
+        .attr("y", legendBarY - 15)
+        .attr("text-anchor", "middle")  
+        .style("font-size", titleFontSize) 
+        .text(title);
+	
+	d3.json("https://raw.githubusercontent.com/deldersveld/topojson/master/countries/new-zealand/new-zealand-regional-councils.json").then(function(topology) {
+
+		console.log(topology);
+		
+		svg.append("g")
+			.selectAll("path")
+			.data(topojson.feature(topology, topology.objects.NZL_adm1).features)
+			.enter().append("path")
+				.attr("class", function(d) { return d.properties.NAME_1; })
+				.attr("d", path)
+				.attr("fill", function(d) { 
+					d.value = map.get(d.properties.NAME_1); //retrieves the value from the mapped data by using its corressponding 'key'
+					return colorScale(d.value); });
+	})
+</script>
+</body>
+</html>
