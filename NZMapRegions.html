@@ -7,12 +7,25 @@ path {
 }
 
 path:hover {
-  fill: red;
+  fill: #f77474;
+}
+
+.selected {
+    fill: #f77474;
 }
 
 text{
-	font-family: 'Roboto', sans-serif;
+	font-family: 'Shippori Mincho B1', serif;
+	
+	-webkit-filter: drop-shadow( 0px 3px 3px rgba(0,0,0,.3) );
+	filter: drop-shadow( 0px 3px 3px rgba(0,0,0,.25) );
 }
+
+rect{
+	-webkit-filter: drop-shadow( 0px 3px 3px rgba(0,0,0,.3) );
+	filter: drop-shadow( 0px 3px 3px rgba(0,0,0,.25) );
+}
+
 
 </style>
 <body>
@@ -22,21 +35,19 @@ text{
 
 <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600&display=swap" rel="stylesheet">
 <script>
 	
-	//the lowest and highest values in the data, used so that the colour can properly spread
 	var lowestValue = 0; 
 	var highestValue = 0;
 	
 	var lowestIsZero = true;
 	
-	//the colours for the gradient
-	var colours = ["#c6dbef", "#084594"];
+	var colours = ["#c6dbef", "#02387d"]; //the colours for the gradient
 	
+	var title = "Participants by Region";
 	
-	var title = "Confirmed COVID Cases by Region";
-	
-	var titleFontSize = "20px";
+	var titleFontSize = "21px";
 	var legendFontSize = "12px";
 	
 	var legendBarX = 120;
@@ -47,26 +58,31 @@ text{
 	
 	var strokeWidth = 1;
 	
-	var graphBarHeight = 20;
-	var graphX = 30;
-	var graphY = 100;
+	var regionInfoNameX = legendBarX + legendBarWidth/2;
+	var regionInfoNamey = legendBarY + 60;
+	var regionInfoValueX = legendBarX + legendBarWidth/2;
+	var regionInfoValuey = legendBarY + 80;
+	
+	var regionInfoFontSize = '17px';
+	
+	var currentRegion = "";
 	
 	var data =[
-	 {"NAME_1": "Auckland",				"value": 401},
-	 {"NAME_1": "Bay of Plenty",		"value": 33},
-	 {"NAME_1": "Canterbury",			"value": 114},
-	 {"NAME_1": "Gisborne",				"value": 3},
-	 {"NAME_1": "Hawke's Bay",			"value": 38},
-	 {"NAME_1": "Manawatu-Wanganui",	"value": 27},
-	 {"NAME_1": "Marlborough",			"value": 37},
-	 {"NAME_1": "Nelson",				"value": 37},
-	 {"NAME_1": "Northland",			"value": 26},
-	 {"NAME_1": "Otago",				"value": 15},
-	 {"NAME_1": "Southland",			"value": 186},
-	 {"NAME_1": "Taranaki",				"value": 14},
-	 {"NAME_1": "Waikato",				"value": 154},
-	 {"NAME_1": "Wellington",			"value": 96},
-	 {"NAME_1": "West Coast",			"value": 4}
+	 {"NAME_1": "Auckland",				"value": 222},
+	 {"NAME_1": "Bay of Plenty",		"value": 61},
+	 {"NAME_1": "Canterbury",			"value": 14},
+	 {"NAME_1": "Gisborne",				"value": 5},
+	 {"NAME_1": "Hawke's Bay",			"value": 241},
+	 {"NAME_1": "Manawatu-Wanganui",	"value": 56},
+	 {"NAME_1": "Marlborough",			"value": 132},
+	 {"NAME_1": "Nelson",				"value": 3},
+	 {"NAME_1": "Northland",			"value": 33},
+	 {"NAME_1": "Otago",				"value": 324},
+	 {"NAME_1": "Southland",			"value": 13},
+	 {"NAME_1": "Taranaki",				"value": 44},
+	 {"NAME_1": "Waikato",				"value": 96},
+	 {"NAME_1": "Wellington",			"value": 156},
+	 {"NAME_1": "West Coast",			"value": 5}
     ]
 	
 	var minMaxArray = [];
@@ -84,6 +100,9 @@ text{
 	}
 	
 	highestValue = getMaxOfArray(minMaxArray);
+	highestValue = highestValue/8;
+	highestValue = Math.ceil(highestValue/10)*10;
+	highestValue = highestValue*8;
 	
 	if(lowestIsZero == false){
 		lowestValue = getMinOfArray(minMaxArray);
@@ -146,7 +165,22 @@ text{
 			.style("opacity", legendOpacity);
 	
 	}
-	
+	//ReionalInfo Text
+	svg.append("text")
+		.attr("x", regionInfoNameX)             
+		.attr("y", regionInfoNamey)
+		.attr("text-anchor", "middle")  
+		.style("font-size", regionInfoFontSize)
+		.text("")
+		.classed('regionInfoName',true);
+		
+	svg.append("text")
+		.attr("x", regionInfoValueX)             
+		.attr("y", regionInfoValuey)
+		.attr("text-anchor", "middle")  
+		.style("font-size", regionInfoFontSize)
+		.text("")
+		.classed('regionInfoValue',true);
 	
 	//Title Text
 	svg.append("text")
@@ -168,8 +202,48 @@ text{
 				.attr("d", path)
 				.attr("fill", function(d) { 
 					d.value = map.get(d.properties.NAME_1); //retrieves the value from the mapped data by using its corressponding 'key'
-					return colorScale(d.value); });
+					return colorScale(d.value); })
+				.on("click", function () {
+				
+					d3.select(".selected").classed("selected", false);
+					d3.select(this).classed("selected", true);
+					
+					if(currentRegion == this.className.baseVal.replace(" selected", "")){
+						d3.select(".selected").classed("selected", false);
+					}
+				
+					regionPopup(this);
+					
+					currentRegion = this.className.baseVal.replace(" selected", "")
+				});
 	})
+	
+	function regionPopup(pathObject){
+		
+		var region = pathObject.className.baseVal.replace(" selected", "");
+		
+		if(currentRegion == region){
+			d3.selectAll(".regionInfoName")
+				.text("");
+			
+			d3.selectAll(".regionInfoValue")
+				.text("");
+		}
+		else{
+			d3.selectAll(".regionInfoName")
+				.text(region);
+			
+			for (var i = 0; i < data.length; i++) {
+				if(data[i].NAME_1 == region){
+					d3.selectAll(".regionInfoValue")
+						.text("Count: " + data[i].value);
+				}
+			}
+		}
+	}
+	
+
+	
 </script>
 </body>
 </html>
