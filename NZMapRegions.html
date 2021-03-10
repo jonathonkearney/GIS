@@ -60,29 +60,36 @@ rect{
 	
 	var regionInfoNameX = legendBarX + legendBarWidth/2;
 	var regionInfoNamey = legendBarY + 60;
+	
 	var regionInfoValueX = legendBarX + legendBarWidth/2;
 	var regionInfoValuey = legendBarY + 80;
+	
+	var regionInfoLineX1 = legendBarX + (legendBarWidth/6 * 2) ;
+	var regionInfoLineX2 = legendBarX + (legendBarWidth/6 * 4);
+	var regionInfoLineY1 = legendBarY + 40;
+	var regionInfoLineY2 = legendBarY + 40;
+	var regionInfoLineOpacity = 0.3;
 	
 	var regionInfoFontSize = '17px';
 	
 	var currentRegion = "";
 	
 	var data =[
-	 {"NAME_1": "Auckland",				"value": 222},
-	 {"NAME_1": "Bay of Plenty",		"value": 61},
-	 {"NAME_1": "Canterbury",			"value": 14},
-	 {"NAME_1": "Gisborne",				"value": 5},
-	 {"NAME_1": "Hawke's Bay",			"value": 241},
-	 {"NAME_1": "Manawatu-Wanganui",	"value": 56},
-	 {"NAME_1": "Marlborough",			"value": 132},
-	 {"NAME_1": "Nelson",				"value": 3},
-	 {"NAME_1": "Northland",			"value": 33},
-	 {"NAME_1": "Otago",				"value": 324},
-	 {"NAME_1": "Southland",			"value": 13},
-	 {"NAME_1": "Taranaki",				"value": 44},
-	 {"NAME_1": "Waikato",				"value": 96},
-	 {"NAME_1": "Wellington",			"value": 156},
-	 {"NAME_1": "West Coast",			"value": 5}
+	 {"NAME_1": "Auckland",				"value": 21},
+	 {"NAME_1": "Bay of Plenty",		"value": 70},
+	 {"NAME_1": "Canterbury",			"value": 15},
+	 {"NAME_1": "Gisborne",				"value": 51},
+	 {"NAME_1": "Hawke's Bay",			"value": 212},
+	 {"NAME_1": "Manawatu-Wanganui",	"value": 5},
+	 {"NAME_1": "Marlborough",			"value": 113},
+	 {"NAME_1": "Nelson",				"value": 123},
+	 {"NAME_1": "Northland",			"value": 26},
+	 {"NAME_1": "Otago",				"value": 3},
+	 {"NAME_1": "Southland",			"value": 130},
+	 {"NAME_1": "Taranaki",				"value": 242},
+	 {"NAME_1": "Waikato",				"value": 9},
+	 {"NAME_1": "Wellington",			"value": 16},
+	 {"NAME_1": "West Coast",			"value": 54}
     ]
 	
 	var minMaxArray = [];
@@ -165,7 +172,18 @@ rect{
 			.style("opacity", legendOpacity);
 	
 	}
-	//ReionalInfo Text
+	//Popup Line
+	svg.append("line")
+			.attr("x1", regionInfoLineX1)
+			.attr("x2", regionInfoLineX2)
+			.attr("y1", regionInfoLineY1)
+			.attr("y2", regionInfoLineY2)
+			.style('stroke', 'black')
+			.style('stroke-width', strokeWidth * 1.5)
+			.style("opacity", 0)
+			.classed('regionInfoLine',true);
+	
+	//Popup Name
 	svg.append("text")
 		.attr("x", regionInfoNameX)             
 		.attr("y", regionInfoNamey)
@@ -174,7 +192,8 @@ rect{
 		.text("")
 		.style("font-style", "italic")
 		.classed('regionInfoName',true);
-		
+	
+	//Popup Value
 	svg.append("text")
 		.attr("x", regionInfoValueX)             
 		.attr("y", regionInfoValuey)
@@ -206,17 +225,7 @@ rect{
 					d.value = map.get(d.properties.NAME_1); //retrieves the value from the mapped data by using its corressponding 'key'
 					return colorScale(d.value); })
 				.on("click", function () {
-				
-					d3.select(".selected").classed("selected", false);
-					d3.select(this).classed("selected", true);
-					
-					if(currentRegion == this.className.baseVal.replace(" selected", "")){
-						d3.select(".selected").classed("selected", false);
-					}
-				
 					regionPopup(this);
-					
-					currentRegion = this.className.baseVal.replace(" selected", "")
 				});
 	})
 	
@@ -224,14 +233,26 @@ rect{
 		
 		var region = pathObject.className.baseVal.replace(" selected", "");
 		
+		d3.select(".selected").classed("selected", false); //Set the previously selected region as no longer selected
+		d3.select(pathObject).classed("selected", true); //Set this current clicked region as selected
+		
 		if(currentRegion == region){
+			
+			d3.selectAll(".regionInfoLine")
+				.style("opacity", 0);
+			
 			d3.selectAll(".regionInfoName")
 				.text("");
 			
 			d3.selectAll(".regionInfoValue")
 				.text("");
+			
 		}
 		else{
+			
+			d3.selectAll(".regionInfoLine")
+				.style("opacity", regionInfoLineOpacity);
+			
 			d3.selectAll(".regionInfoName")
 				.text(region);
 			
@@ -241,6 +262,13 @@ rect{
 						.text("Count: " + data[i].value);
 				}
 			}
+		}
+		if(currentRegion == region){
+			d3.select(".selected").classed("selected", false);
+			currentRegion = "";
+		}
+		else{
+			currentRegion = region;
 		}
 	}
 	
