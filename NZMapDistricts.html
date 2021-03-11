@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+path {
+  stroke: white;
+  stroke-width: 0.25px;
+}
+
+path:hover {
+  fill: #f77474;
+}
+
+.selected {
+    fill: #f77474;
+}
+
+text{
+	font-family: 'Shippori Mincho B1', serif;
+	
+	-webkit-filter: drop-shadow( 0px 3px 3px rgba(0,0,0,.3) );
+	filter: drop-shadow( 0px 3px 3px rgba(0,0,0,.25) );
+}
+
+rect{
+	-webkit-filter: drop-shadow( 0px 3px 3px rgba(0,0,0,.3) );
+	filter: drop-shadow( 0px 3px 3px rgba(0,0,0,.25) );
+}
+
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/topojson@3"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600&display=swap" rel="stylesheet">
+<script>
+	
+	var lowestValue = 0; 
+	var highestValue = 0;
+	
+	var lowestIsZero = true;
+	
+	var colours = ["#c6dbef", "#02387d"]; //the colours for the gradient
+	
+	var title = "Participants by Region";
+	
+	var titleFontSize = "21px";
+	var legendFontSize = "12px";
+	
+	var legendBarX = 120;
+	var legendBarY = 150;
+	var legendBarWidth = 250;
+	var legendBarHeight = 10;
+	var legendOpacity = 0.6;
+	
+	var strokeWidth = 1;
+	
+	var regionInfoNameX = legendBarX + legendBarWidth/2;
+	var regionInfoNamey = legendBarY + 60;
+	
+	var regionInfoValueX = legendBarX + legendBarWidth/2;
+	var regionInfoValuey = legendBarY + 80;
+	
+	var regionInfoLineX1 = legendBarX + (legendBarWidth/6 * 2) ;
+	var regionInfoLineX2 = legendBarX + (legendBarWidth/6 * 4);
+	var regionInfoLineY1 = legendBarY + 40;
+	var regionInfoLineY2 = legendBarY + 40;
+	var regionInfoLineOpacity = 0.3;
+	
+	var regionInfoFontSize = '17px';
+	
+	var currentRegion = "";
+	
+	var data =[
+	{"NAME_2": "Auckland",				"value": 0},
+	{"NAME_2": "Franklin",				"value": 0},
+	{"NAME_2": "Manukau",				"value": 0},
+	{"NAME_2": "Hamilton",				"value": 0},
+	{"NAME_2": "Hauraki",				"value": 0},
+	{"NAME_2": "Matamata-Piako",		"value": 0},
+	{"NAME_2": "Otorohanga",			"value": 0},
+	{"NAME_2": "Rotorua",				"value": 0},
+	{"NAME_2": "South Waikato",			"value": 0},
+	{"NAME_2": "Taupo",					"value": 0},
+	{"NAME_2": "Thames-Coromandel",		"value": 0},
+	{"NAME_2": "Rodney",				"value": 0},
+	{"NAME_2": "Waitakere",				"value": 0},
+	{"NAME_2": "Opotiki",				"value": 0},
+	{"NAME_2": "Rotorua",				"value": 0},
+	{"NAME_2": "Taupo",					"value": 0},
+	{"NAME_2": "Western Bay of Plenty",	"value": 0},
+	{"NAME_2": "Whakatane",				"value": 0},
+	{"NAME_2": "Ashburton",				"value": 0},
+	{"NAME_2": "Christchurch",			"value": 0},
+	{"NAME_2": "Hurunui",				"value": 0},
+	{"NAME_2": "Kaikoura",				"value": 0},
+	{"NAME_2": "Mackenzie",				"value": 0},
+	{"NAME_2": "Selwyn",				"value": 0},
+	{"NAME_2": "Timaru",				"value": 0},
+	{"NAME_2": "Waimakariri",			"value": 0},
+	{"NAME_2": "Waimate",				"value": 0},
+	{"NAME_2": "Waitaki",				"value": 0},
+	{"NAME_2": "Gisborne",				"value": 0},
+	{"NAME_2": "Central Hawke's Bay",	"value": 0},
+	{"NAME_2": "Hastings",				"value": 0},
+	{"NAME_2": "Hastings city",			"value": 0},
+	{"NAME_2": "Napier",				"value": 0},
+	{"NAME_2": "Wairoa",				"value": 0},
+	{"NAME_2": "Horowhenua",			"value": 0},
+	{"NAME_2": "Manawatu",				"value": 0},
+	{"NAME_2": "Palmerston North",		"value": 0},
+	{"NAME_2": "Rangitikei",			"value": 0},
+	{"NAME_2": "Ruapehu",				"value": 0},
+	{"NAME_2": "Tararua",				"value": 0},
+	{"NAME_2": "Wanganui",				"value": 0},
+	{"NAME_2": "Marlborough",			"value": 0},
+	{"NAME_2": "Nelson",				"value": 0},
+	{"NAME_2": "Tasman",				"value": 0},
+	{"NAME_2": "Far North",				"value": 0},
+	{"NAME_2": "Kaipara",				"value": 0},
+	{"NAME_2": "Whangarei",				"value": 0},
+	{"NAME_2": "Central Otago",			"value": 0},
+	{"NAME_2": "Clutha",				"value": 0},
+	{"NAME_2": "Dunedin",				"value": 0},
+	{"NAME_2": "Queenstown-Lakes",		"value": 0},
+	{"NAME_2": "Waitaki",				"value": 0},
+	{"NAME_2": "Gore",					"value": 0},
+	{"NAME_2": "Invercargill",			"value": 0},
+	{"NAME_2": "Southland",				"value": 0},
+	{"NAME_2": "New Plymouth",			"value": 0},
+	{"NAME_2": "South Taranaki",		"value": 0},
+	{"NAME_2": "Stratford",				"value": 0},
+	{"NAME_2": "Franklin",				"value": 0},
+	{"NAME_2": "Waikato",				"value": 0},
+	{"NAME_2": "Waipa",					"value": 0},
+	{"NAME_2": "Waitomo",				"value": 0},
+	{"NAME_2": "Carterton",				"value": 0},
+	{"NAME_2": "Hutt city",				"value": 0},
+	{"NAME_2": "Kapiti Coast",			"value": 0},
+	{"NAME_2": "Masterton",				"value": 0},
+	{"NAME_2": "Porirua",				"value": 0},
+	{"NAME_2": "South Wairarapa",		"value": 0},
+	{"NAME_2": "Upper Hutt",			"value": 0},
+	{"NAME_2": "Wellington",			"value": 0},
+	{"NAME_2": "Buller",				"value": 0},
+	{"NAME_2": "Grey",					"value": 0},
+	{"NAME_2": "Westland",				"value": 0}
+	]
+	
+	for (var i = 0; i < data.length; i++) {
+		data[i].value = Math.floor(Math.random() * 250);
+	}
+	
+	var minMaxArray = [];
+	
+	for (var i = 0; i < data.length; i++) {
+		minMaxArray.push(data[i].value);
+	}
+	
+	function getMaxOfArray(numArray) {
+		return Math.max.apply(null, numArray);
+	}
+	
+	function getMinOfArray(numArray) {
+		return Math.min.apply(null, numArray);
+	}
+	
+	highestValue = getMaxOfArray(minMaxArray);
+	highestValue = highestValue/8;
+	highestValue = Math.ceil(highestValue/10)*10;
+	highestValue = highestValue*8;
+	
+	if(lowestIsZero == false){
+		lowestValue = getMinOfArray(minMaxArray);
+	}
+	
+	var map = d3.map();
+	
+	for (var i = 0; i < data.length; i++) {
+		map.set(data[i].NAME_2, data[i].value);
+	}
+	
+	var width = 900,
+		height = 700;
+
+	var projection = d3.geoMercator()
+		.center([-5, -39.2 ])
+		.scale(2200)
+		.rotate([-180,0]);
+
+	var svg = d3.select("body").append("svg")
+		.attr("width", width)
+		.attr("height", height);
+
+	var path = d3.geoPath()
+		.projection(projection);
+	
+	var colorScale = d3.scaleLinear()
+		.domain([lowestValue, highestValue])
+		.range([colours[0], colours[1]]);
+		
+	for (var i = 0; i < 9; i++) {
+		
+		if(i<=7){
+			svg.append('rect')
+				.attr('x', legendBarX + ((legendBarWidth/8)*i))
+				.attr('y', legendBarY)
+				.attr('width', legendBarWidth/8)
+				.attr('height', legendBarHeight)
+				.attr("fill", colorScale((highestValue/8)*i))
+				.style('stroke', 'black')
+				.style('stroke-width', 0);
+		}
+		
+		svg.append("line")
+			.attr("x1", legendBarX + ((legendBarWidth/8)*i))
+			.attr("x2", legendBarX + ((legendBarWidth/8)*i))
+			.attr("y1", legendBarY)
+			.attr("y2", legendBarY + legendBarHeight + 6)
+			.style('stroke', 'black')
+			.style('stroke-width', strokeWidth)
+			.style("opacity", legendOpacity);
+	
+		svg.append("text")
+			.attr("x", legendBarX + ((legendBarWidth/8)*i))             
+			.attr("y", legendBarY + 30)
+			.attr("text-anchor", "middle")  
+			.style("font-size", legendFontSize) 
+			.text(Math.round((highestValue/8)*i))
+			.style("opacity", legendOpacity);
+	
+	}
+	//Popup Line
+	svg.append("line")
+			.attr("x1", regionInfoLineX1)
+			.attr("x2", regionInfoLineX2)
+			.attr("y1", regionInfoLineY1)
+			.attr("y2", regionInfoLineY2)
+			.style('stroke', 'black')
+			.style('stroke-width', strokeWidth * 1.5)
+			.style("opacity", 0)
+			.classed('regionInfoLine',true);
+	
+	//Popup Name
+	svg.append("text")
+		.attr("x", regionInfoNameX)             
+		.attr("y", regionInfoNamey)
+		.attr("text-anchor", "middle")  
+		.style("font-size", regionInfoFontSize)
+		.text("")
+		.style("font-style", "italic")
+		.classed('regionInfoName',true);
+	
+	//Popup Value
+	svg.append("text")
+		.attr("x", regionInfoValueX)             
+		.attr("y", regionInfoValuey)
+		.attr("text-anchor", "middle")  
+		.style("font-size", regionInfoFontSize)
+		.text("")
+		.style("font-style", "italic")
+		.classed('regionInfoValue',true);
+	
+	//Title Text
+	svg.append("text")
+        .attr("x", legendBarX + (legendBarWidth/2))             
+        .attr("y", legendBarY - 15)
+        .attr("text-anchor", "middle")  
+        .style("font-size", titleFontSize) 
+        .text(title);
+	
+	d3.json("https://raw.githubusercontent.com/deldersveld/topojson/master/countries/new-zealand/new-zealand-districts.json").then(function(topology) {
+
+		console.log(topology);
+		
+		svg.append("g")
+			.selectAll("path")
+			.data(topojson.feature(topology, topology.objects.NZL_adm2).features)
+			.enter().append("path")
+				.attr("class", function(d) { return d.properties.NAME_2; })
+				.attr("d", path)
+				.attr("fill", function(d) { 
+					d.value = map.get(d.properties.NAME_2); //retrieves the value from the mapped data by using its corressponding 'key'
+					return colorScale(d.value); })
+				.on("click", function () {
+					regionPopup(this);
+				});
+	})
+	
+	function regionPopup(pathObject){
+		
+		var region = pathObject.className.baseVal.replace(" selected", "");
+		
+		d3.select(".selected").classed("selected", false); //Set the previously selected region as no longer selected
+		d3.select(pathObject).classed("selected", true); //Set this current clicked region as selected
+		
+		if(currentRegion == region){
+			d3.selectAll(".regionInfoLine")
+				.style("opacity", 0);
+			
+			d3.selectAll(".regionInfoName")
+				.text("");
+			
+			d3.selectAll(".regionInfoValue")
+				.text("");
+			
+			d3.select(".selected").classed("selected", false);
+			currentRegion = "";
+		}
+		else{
+			d3.selectAll(".regionInfoLine")
+				.style("opacity", regionInfoLineOpacity);
+			
+			d3.selectAll(".regionInfoName")
+				.text(region);
+			
+			for (var i = 0; i < data.length; i++) {
+				if(data[i].NAME_2 == region){
+					d3.selectAll(".regionInfoValue")
+						.text("Count: " + data[i].value);
+				}
+			}
+			currentRegion = region;
+		}
+	}
+	
+</script>
+</body>
+</html>
+	
+	
